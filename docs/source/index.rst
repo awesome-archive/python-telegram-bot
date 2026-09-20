@@ -3,21 +3,48 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Python Telegram Bot's documentation!
-===============================================
+.. raw:: html
 
-Below you can find the documentation for the python-telegram-bot library. except for the .ext package most of the
-objects in the package reflect the types as defined by the `telegram bot api <https://core.telegram.org/bots/api>`_.
+    <div style="display: none">
+
+Hidden Headline
+===============
+This is just here to get furo to display the right sidebar.
+
+.. raw:: html
+
+    </div>
+
+.. include:: ../../README.rst
+
+.. The toctrees are hidden such that they don't render on the start page but still include the contents into the documentation.
 
 .. toctree::
+   :hidden:
+   :caption: Reference
+
    telegram
+   telegram.ext
+   telegram_auxil
+   Telegrams Bot API Docs <https://core.telegram.org/bots/api>
 
+.. toctree::
+   :hidden:
+   :caption: Resources
 
-Indices and tables
-==================
+   examples
+   Wiki <https://github.com/python-telegram-bot/python-telegram-bot/wiki>
 
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+.. toctree::
+   :hidden:
+   :caption: Project
 
-
+   stability_policy
+   changelog
+   coc
+   contributing
+   testing
+   Website <https://python-telegram-bot.org>
+   GitHub Repository <https://github.com/python-telegram-bot/python-telegram-bot/>
+   Telegram Channel <https://t.me/pythontelegrambotchannel/>
+   Telegram User Group <https://t.me/pythontelegrambotgroup/>

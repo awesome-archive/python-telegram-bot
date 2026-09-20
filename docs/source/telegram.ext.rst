@@ -1,30 +1,24 @@
 telegram.ext package
 ====================
 
-.. toctree::
+.. automodule:: telegram.ext
 
-    telegram.ext.updater
-    telegram.ext.dispatcher
-    telegram.ext.filters
+.. toctree::
+    :titlesonly:
+
+    telegram.ext.application
+    telegram.ext.applicationbuilder
+    telegram.ext.applicationhandlerstop
+    telegram.ext.baseupdateprocessor
+    telegram.ext.callbackcontext
+    telegram.ext.contexttypes
+    telegram.ext.defaults
+    telegram.ext.extbot
+    telegram.ext.job
     telegram.ext.jobqueue
-    telegram.ext.messagequeue
-    telegram.ext.delayqueue
-
-Handlers
---------
-
-.. toctree::
-
-    telegram.ext.handler
-    telegram.ext.callbackqueryhandler
-    telegram.ext.choseninlineresulthandler
-    telegram.ext.conversationhandler
-    telegram.ext.commandhandler
-    telegram.ext.inlinequeryhandler
-    telegram.ext.messagehandler
-    telegram.ext.precheckoutqueryhandler
-    telegram.ext.regexhandler
-    telegram.ext.shippingqueryhandler
-    telegram.ext.stringcommandhandler
-    telegram.ext.stringregexhandler
-    telegram.ext.typehandler
+    telegram.ext.simpleupdateprocessor
+    telegram.ext.updater
+    telegram.ext.handlers-tree.rst
+    telegram.ext.persistence-tree.rst
+    telegram.ext.acd-tree.rst
+    telegram.ext.rate-limiting-tree.rst

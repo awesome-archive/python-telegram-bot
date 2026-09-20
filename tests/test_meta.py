@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # A library that provides a Python interface to the Telegram Bot API
-# Copyright (C) 2015-2017
+# Copyright (C) 2015-2026
 # Leandro Toledo de Souza <devs@python-telegram-bot.org>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -17,26 +17,22 @@
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
 import os
-import subprocess
-import sys
-from platform import python_implementation
 
 import pytest
 
+from tests.auxil.envvars import env_var_2_bool
 
-def call_pre_commit_hook(hook_id):
-    __tracebackhide__ = True
-    return subprocess.call(['pre-commit', 'run', '--all-files', hook_id])
-
-
-@pytest.mark.parametrize('hook_id', argvalues=('yapf', 'flake8', 'pylint'))
-@pytest.mark.skipif(not os.getenv('TRAVIS'), reason='Not running in travis.')
-@pytest.mark.skipif(not sys.version_info[:2] == (3, 6) or python_implementation() != 'CPython',
-                   reason='Only running pre-commit-hooks on newest tested python version, '
-                          'as they are slow and consistent across platforms.')
-def test_pre_commit_hook(hook_id):
-    assert call_pre_commit_hook(hook_id) == 0
+skip_disabled = pytest.mark.skipif(
+    not env_var_2_bool(os.getenv("TEST_BUILD", "")), reason="TEST_BUILD not enabled"
+)
 
 
+# To make the tests agnostic of the cwd
+@pytest.fixture(autouse=True)
+def _change_test_dir(request, monkeypatch):
+    monkeypatch.chdir(request.config.rootdir)
+
+
+@skip_disabled
 def test_build():
-    assert subprocess.call(['python', 'setup.py', 'bdist_dumb']) == 0
+    assert os.system("python -m build") == 0  # pragma: no cover

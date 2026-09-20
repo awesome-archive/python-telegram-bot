@@ -23,6 +23,11 @@ var/
 .installed.cfg
 *.egg
 .env
+.pybuild
+debian/tmp
+debian/python3-telegram
+debian/python3-telegram-doc
+debian/.debhelper
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -40,10 +45,14 @@ htmlcov/
 .coverage
 .coverage.*
 .cache
+.pytest_cache
+.mypy_cache
 nosetests.xml
 coverage.xml
 *,cover
 .coveralls.yml
+.testmondata
+.testmondata-journal
 
 # Translations
 *.mo
@@ -58,11 +67,16 @@ docs/_build/
 # PyBuilder
 target/
 .idea/
+.run/
 
 # Sublime Text 2
 *.sublime*
 
+# VS Code
+.vscode
+
 # unitests files
+game.gif
 telegram.mp3
 telegram.mp4
 telegram2.mp4
@@ -76,3 +90,14 @@ telegram.jpg
 
 # Exclude .exrc file for Vim
 .exrc
+
+# virtual env
+venv*
+pyvenv.cfg
+Scripts/
+
+# environment manager:
+.mise.toml
+
+# Support for uv.lock will come in a future PR. See #4796
+uv.lock

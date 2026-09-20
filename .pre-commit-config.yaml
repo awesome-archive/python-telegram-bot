@@ -1,20 +1,55 @@
--   repo: git://github.com/python-telegram-bot/mirrors-yapf
-    sha: master
+repos:
+-   repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: 'v0.16.6'
     hooks:
-    -   id: yapf
-        files: ^(telegram|tests)/.*\.py$
-        args:
-        - --diff
--   repo: git://github.com/pre-commit/pre-commit-hooks
-    sha: 78818b90cd694c29333ba54d38f9e60b6359ccfc
-    hooks:
-    -   id: flake8
-        files: ^telegram/.*\.py$
--   repo: git://github.com/pre-commit/mirrors-pylint
-    sha: v1.7.1
+    # Run the linter:
+    -   id: ruff-check
+        name: ruff check
+    # Run the formatter:
+    -   id: ruff-format
+        name: ruff format
+-   repo: https://github.com/PyCQA/pylint
+    rev: v4.0.8
     hooks:
     -   id: pylint
-        files: ^telegram/.*\.py$
-        args:
-        - --errors-only
-        - --disable=import-error
+        files: ^(?!(tests|docs)).*\.py$
+        language: python
+        additional_dependencies:
+          - httpx~=0.27
+          - tornado~=6.4
+          - APScheduler>=3.10.4,<3.12.0
+          - cachetools>=7.0.0,<8.0.0
+          - aiolimiter~=1.3,<1.4
+          - . # this basically does `pip install -e .`
+        priority: 10
+-   repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.20.2
+    hooks:
+    -   id: mypy
+        name: mypy-ptb
+        files: ^(?!(tests|examples|docs)).*\.py$
+        language: python
+        additional_dependencies:
+          - types-pytz
+          - types-cryptography
+          - types-cachetools
+          - httpx~=0.27
+          - tornado~=6.4
+          - APScheduler>=3.10.4,<3.12.0
+          - cachetools>=7.0.0,<8.0.0
+          - aiolimiter~=1.3,<1.4
+          - . # this basically does `pip install -e .`
+        priority: 10
+    - id: mypy
+      name: mypy-examples
+      files: ^examples/.*\.py$
+      language: python
+      args:
+        - --no-strict-optional
+        - --follow-imports=silent
+      additional_dependencies:
+        - tornado~=6.4
+        - APScheduler>=3.10.4,<3.12.0
+        - cachetools>=7.0.0,<8.0.0
+        - . # this basically does `pip install -e .`
+      priority: 10

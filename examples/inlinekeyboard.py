@@ -1,55 +1,70 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# Basic example for a bot that uses inline keyboards.
+# pylint: disable=unused-argument
 # This program is dedicated to the public domain under the CC0 license.
 
+"""
+Basic example for a bot that uses inline keyboards. For an in-depth explanation, check out
+ https://github.com/python-telegram-bot/python-telegram-bot/wiki/InlineKeyboard-Example.
+"""
+
 import logging
-from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, CallbackQueryHandler
 
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, Update
+from telegram.ext import Application, CallbackQueryHandler, CommandHandler, ContextTypes
+
+# Enable logging
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+# set higher logging level for httpx to avoid all GET and POST requests being logged
+logging.getLogger("httpx").setLevel(logging.WARNING)
+
+logger = logging.getLogger(__name__)
 
 
-def start(bot, update):
-    keyboard = [[InlineKeyboardButton("Option 1", callback_data='1'),
-                 InlineKeyboardButton("Option 2", callback_data='2')],
-
-                [InlineKeyboardButton("Option 3", callback_data='3')]]
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Sends a message with three inline buttons attached."""
+    keyboard = [
+        [
+            InlineKeyboardButton("Option 1", callback_data="1"),
+            InlineKeyboardButton("Option 2", callback_data="2"),
+        ],
+        [InlineKeyboardButton("Option 3", callback_data="3")],
+    ]
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+    await update.message.reply_text("Please choose:", reply_markup=reply_markup)
 
 
-def button(bot, update):
+async def button(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Parses the CallbackQuery and updates the message text."""
     query = update.callback_query
 
-    bot.edit_message_text(text="Selected option: %s" % query.data,
-                          chat_id=query.message.chat_id,
-                          message_id=query.message.message_id)
+    # CallbackQueries need to be answered, even if no notification to the user is needed
+    # Some clients may have trouble otherwise. See https://core.telegram.org/bots/api#callbackquery
+    await query.answer()
+
+    await query.edit_message_text(text=f"Selected option: {query.data}")
 
 
-def help(bot, update):
-    update.message.reply_text("Use /start to test this bot.")
+async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Displays info on how to use the bot."""
+    await update.message.reply_text("Use /start to test this bot.")
 
 
-def error(bot, update, error):
-    logging.warning('Update "%s" caused error "%s"' % (update, error))
+def main() -> None:
+    """Run the bot."""
+    # Create the Application and pass it your bot's token.
+    application = Application.builder().token("TOKEN").build()
+
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CallbackQueryHandler(button))
+    application.add_handler(CommandHandler("help", help_command))
+
+    # Run the bot until the user presses Ctrl-C
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
-# Create the Updater and pass it your bot's token.
-updater = Updater("TOKEN")
-
-updater.dispatcher.add_handler(CommandHandler('start', start))
-updater.dispatcher.add_handler(CallbackQueryHandler(button))
-updater.dispatcher.add_handler(CommandHandler('help', help))
-updater.dispatcher.add_error_handler(error)
-
-# Start the Bot
-updater.start_polling()
-
-# Run the bot until the user presses Ctrl-C or the process receives SIGINT,
-# SIGTERM or SIGABRT
-updater.idle()
+if __name__ == "__main__":
+    main()

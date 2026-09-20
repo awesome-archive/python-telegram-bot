@@ -1,7 +1,6 @@
-telegram.error module
+telegram.error Module
 =====================
 
 .. automodule:: telegram.error
     :members:
-    :undoc-members:
     :show-inheritance:

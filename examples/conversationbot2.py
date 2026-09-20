@@ -1,13 +1,10 @@
 #!/usr/bin/env python
-# -*- coding: utf-8 -*-
-#
-# Simple Bot to reply to Telegram messages
+# pylint: disable=unused-argument
 # This program is dedicated to the public domain under the CC0 license.
-"""
-This Bot uses the Updater class to handle the bot.
 
+"""
 First, a few callback functions are defined. Then, those functions are passed to
-the Dispatcher and registered at their respective places.
+the Application and registered at their respective places.
 Then, the bot is started and runs until we press Ctrl-C on the command line.
 
 Usage:
@@ -17,136 +14,140 @@ Press Ctrl-C on the command line or send a signal to the process to stop the
 bot.
 """
 
-from telegram import ReplyKeyboardMarkup
-from telegram.ext import (Updater, CommandHandler, MessageHandler, Filters, RegexHandler,
-                          ConversationHandler)
-
 import logging
 
+from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update
+from telegram.ext import (
+    Application,
+    CommandHandler,
+    ContextTypes,
+    ConversationHandler,
+    MessageHandler,
+    filters,
+)
+
 # Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                    level=logging.INFO)
+logging.basicConfig(
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
+)
+# set higher logging level for httpx to avoid all GET and POST requests being logged
+logging.getLogger("httpx").setLevel(logging.WARNING)
 
 logger = logging.getLogger(__name__)
 
 CHOOSING, TYPING_REPLY, TYPING_CHOICE = range(3)
 
-reply_keyboard = [['Age', 'Favourite colour'],
-                  ['Number of siblings', 'Something else...'],
-                  ['Done']]
+reply_keyboard = [
+    ["Age", "Favourite colour"],
+    ["Number of siblings", "Something else..."],
+    ["Done"],
+]
 markup = ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
 
 
-def facts_to_str(user_data):
-    facts = list()
-
-    for key, value in user_data.items():
-        facts.append('%s - %s' % (key, value))
-
-    return "\n".join(facts).join(['\n', '\n'])
+def facts_to_str(user_data: dict[str, str]) -> str:
+    """Helper function for formatting the gathered user info."""
+    facts = [f"{key} - {value}" for key, value in user_data.items()]
+    return "\n".join(facts).join(["\n", "\n"])
 
 
-def start(bot, update):
-    update.message.reply_text(
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Start the conversation and ask user for input."""
+    await update.message.reply_text(
         "Hi! My name is Doctor Botter. I will hold a more complex conversation with you. "
         "Why don't you tell me something about yourself?",
-        reply_markup=markup)
+        reply_markup=markup,
+    )
 
     return CHOOSING
 
 
-def regular_choice(bot, update, user_data):
+async def regular_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Ask the user for info about the selected predefined choice."""
     text = update.message.text
-    user_data['choice'] = text
-    update.message.reply_text('Your %s? Yes, I would love to hear about that!' % text.lower())
+    context.user_data["choice"] = text
+    await update.message.reply_text(f"Your {text.lower()}? Yes, I would love to hear about that!")
 
     return TYPING_REPLY
 
 
-def custom_choice(bot, update):
-    update.message.reply_text('Alright, please send me the category first, '
-                              'for example "Most impressive skill"')
+async def custom_choice(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Ask the user for a description of a custom category."""
+    await update.message.reply_text(
+        'Alright, please send me the category first, for example "Most impressive skill"'
+    )
 
     return TYPING_CHOICE
 
 
-def received_information(bot, update, user_data):
+async def received_information(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Store info provided by user and ask for the next category."""
+    user_data = context.user_data
     text = update.message.text
-    category = user_data['choice']
+    category = user_data["choice"]
     user_data[category] = text
-    del user_data['choice']
+    del user_data["choice"]
 
-    update.message.reply_text("Neat! Just so you know, this is what you already told me:"
-                              "%s"
-                              "You can tell me more, or change your opinion on something."
-                              % facts_to_str(user_data),
-                              reply_markup=markup)
+    await update.message.reply_text(
+        "Neat! Just so you know, this is what you already told me:"
+        f"{facts_to_str(user_data)}You can tell me more, or change your opinion"
+        " on something.",
+        reply_markup=markup,
+    )
 
     return CHOOSING
 
 
-def done(bot, update, user_data):
-    if 'choice' in user_data:
-        del user_data['choice']
+async def done(update: Update, context: ContextTypes.DEFAULT_TYPE) -> int:
+    """Display the gathered info and end the conversation."""
+    user_data = context.user_data
+    if "choice" in user_data:
+        del user_data["choice"]
 
-    update.message.reply_text("I learned these facts about you:"
-                              "%s"
-                              "Until next time!" % facts_to_str(user_data))
+    await update.message.reply_text(
+        f"I learned these facts about you: {facts_to_str(user_data)}Until next time!",
+        reply_markup=ReplyKeyboardRemove(),
+    )
 
     user_data.clear()
     return ConversationHandler.END
 
 
-def error(bot, update, error):
-    logger.warn('Update "%s" caused error "%s"' % (update, error))
+def main() -> None:
+    """Run the bot."""
+    # Create the Application and pass it your bot's token.
+    application = Application.builder().token("TOKEN").build()
 
-
-def main():
-    # Create the Updater and pass it your bot's token.
-    updater = Updater("TOKEN")
-
-    # Get the dispatcher to register handlers
-    dp = updater.dispatcher
-
-    # Add conversation handler with the states GENDER, PHOTO, LOCATION and BIO
+    # Add conversation handler with the states CHOOSING, TYPING_CHOICE and TYPING_REPLY
     conv_handler = ConversationHandler(
-        entry_points=[CommandHandler('start', start)],
-
+        entry_points=[CommandHandler("start", start)],
         states={
-            CHOOSING: [RegexHandler('^(Age|Favourite colour|Number of siblings)$',
-                                    regular_choice,
-                                    pass_user_data=True),
-                       RegexHandler('^Something else...$',
-                                    custom_choice),
-                       ],
-
-            TYPING_CHOICE: [MessageHandler(Filters.text,
-                                           regular_choice,
-                                           pass_user_data=True),
-                            ],
-
-            TYPING_REPLY: [MessageHandler(Filters.text,
-                                          received_information,
-                                          pass_user_data=True),
-                           ],
+            CHOOSING: [
+                MessageHandler(
+                    filters.Regex("^(Age|Favourite colour|Number of siblings)$"), regular_choice
+                ),
+                MessageHandler(filters.Regex("^Something else...$"), custom_choice),
+            ],
+            TYPING_CHOICE: [
+                MessageHandler(
+                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Done$")), regular_choice
+                )
+            ],
+            TYPING_REPLY: [
+                MessageHandler(
+                    filters.TEXT & ~(filters.COMMAND | filters.Regex("^Done$")),
+                    received_information,
+                )
+            ],
         },
-
-        fallbacks=[RegexHandler('^Done$', done, pass_user_data=True)]
+        fallbacks=[MessageHandler(filters.Regex("^Done$"), done)],
     )
 
-    dp.add_handler(conv_handler)
+    application.add_handler(conv_handler)
 
-    # log all errors
-    dp.add_error_handler(error)
-
-    # Start the Bot
-    updater.start_polling()
-
-    # Run the bot until you press Ctrl-C or the process receives SIGINT,
-    # SIGTERM or SIGABRT. This should be used most of the time, since
-    # start_polling() is non-blocking and will stop the bot gracefully.
-    updater.idle()
+    # Run the bot until the user presses Ctrl-C
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

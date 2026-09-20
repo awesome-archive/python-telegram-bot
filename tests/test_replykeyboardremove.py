@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 #
 # A library that provides a Python interface to the Telegram Bot API
-# Copyright (C) 2015-2017
+# Copyright (C) 2015-2026
 # Leandro Toledo de Souza <devs@python-telegram-bot.org>
 #
 # This program is free software: you can redistribute it and/or modify
@@ -16,25 +16,28 @@
 #
 # You should have received a copy of the GNU Lesser Public License
 # along with this program.  If not, see [http://www.gnu.org/licenses/].
-
 import pytest
 
 from telegram import ReplyKeyboardRemove
+from tests.auxil.slots import mro_slots
 
 
-@pytest.fixture(scope='class')
+@pytest.fixture(scope="module")
 def reply_keyboard_remove():
-    return ReplyKeyboardRemove(selective=TestReplyKeyboardRemove.selective)
+    return ReplyKeyboardRemove(selective=ReplyKeyboardRemoveTestBase.selective)
 
 
-class TestReplyKeyboardRemove(object):
+class ReplyKeyboardRemoveTestBase:
     remove_keyboard = True
     selective = True
 
-    def test_send_message_with_reply_keyboard_remove(self, bot, chat_id, reply_keyboard_remove):
-        message = bot.send_message(chat_id, 'Text', reply_markup=reply_keyboard_remove)
 
-        assert message.text == 'Text'
+class TestReplyKeyboardRemoveWithoutRequest(ReplyKeyboardRemoveTestBase):
+    def test_slot_behaviour(self, reply_keyboard_remove):
+        inst = reply_keyboard_remove
+        for attr in inst.__slots__:
+            assert getattr(inst, attr, "err") != "err", f"got extra slot '{attr}'"
+        assert len(mro_slots(inst)) == len(set(mro_slots(inst))), "duplicate slot"
 
     def test_expected_values(self, reply_keyboard_remove):
         assert reply_keyboard_remove.remove_keyboard == self.remove_keyboard
@@ -43,6 +46,15 @@ class TestReplyKeyboardRemove(object):
     def test_to_dict(self, reply_keyboard_remove):
         reply_keyboard_remove_dict = reply_keyboard_remove.to_dict()
 
-        assert reply_keyboard_remove_dict['remove_keyboard'] == \
-               reply_keyboard_remove.remove_keyboard
-        assert reply_keyboard_remove_dict['selective'] == reply_keyboard_remove.selective
+        assert (
+            reply_keyboard_remove_dict["remove_keyboard"] == reply_keyboard_remove.remove_keyboard
+        )
+        assert reply_keyboard_remove_dict["selective"] == reply_keyboard_remove.selective
+
+
+class TestReplyKeyboardRemoveWithRequest(ReplyKeyboardRemoveTestBase):
+    async def test_send_message_with_reply_keyboard_remove(
+        self, bot, chat_id, reply_keyboard_remove
+    ):
+        message = await bot.send_message(chat_id, "Text", reply_markup=reply_keyboard_remove)
+        assert message.text == "Text"
